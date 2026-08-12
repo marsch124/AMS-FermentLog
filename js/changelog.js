@@ -4,9 +4,17 @@
 // Dates/times are the release moment in the user's local zone (Europe/Stockholm —
 // CEST in summer, CET in winter).
 
-export const APP_VERSION = '5.20';
+export const APP_VERSION = '5.21';
 
 export const CHANGELOG = [
+  {
+    version: '5.21',
+    date: '2026-08-12 · 20:00 CEST',
+    title: 'Updates now arrive reliably 🔄',
+    changes: [
+      'Fixed a bug where a freshly published update could stay hidden behind an old cached copy of the app even after fully quitting and reopening — the update-check itself now always fetches fresh instead of possibly reusing a stale cached copy of itself.',
+    ],
+  },
   {
     version: '5.20',
     date: '2026-07-23 · 16:05 CEST',

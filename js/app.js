@@ -2265,7 +2265,7 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.addEventListener('controllerchange', () => { if (updateAccepted) location.reload(); });
   window.addEventListener('load', async () => {
     try {
-      const reg = await navigator.serviceWorker.register('./service-worker.js');
+      const reg = await navigator.serviceWorker.register('./service-worker.js?v=' + APP_VERSION);
       if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner(reg.waiting);
       reg.addEventListener('updatefound', () => {
         const nw = reg.installing;
