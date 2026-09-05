@@ -1,6 +1,13 @@
 // service-worker.js — offline app shell caching.
 // Bump CACHE when you change any of the cached files to force an update.
-const CACHE = 'fermentlog-v32';
+/* Named after the app version itself: app.js registers this file as
+   service-worker.js?v=<APP_VERSION from js/changelog.js>, and that query rides
+   along on this script's own URL — so the store can never carry a number of
+   its own again. We only ever bin OUR older copies: the sibling AMS apps share
+   this web address. */
+const APP_V = (new URL(self.location.href).searchParams.get('v') || 'dev').replace(/^v/, '');
+const PREFIX = 'fermentlog-v';
+const CACHE = PREFIX + APP_V;
 const ASSETS = [
   './',
   './index.html',
@@ -28,7 +35,7 @@ self.addEventListener('message', (e) => { if (e.data === 'SKIP_WAITING') self.sk
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k.startsWith(PREFIX) && k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });

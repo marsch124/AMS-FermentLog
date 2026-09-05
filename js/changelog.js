@@ -4,9 +4,18 @@
 // Dates/times are the release moment in the user's local zone (Europe/Stockholm —
 // CEST in summer, CET in winter).
 
-export const APP_VERSION = '5.21';
+export const APP_VERSION = '5.22';
 
 export const CHANGELOG = [
+  {
+    version: '5.22',
+    date: '2026-09-04 · 19:20 CEST',
+    title: 'Better neighbours, and one version number 🏠',
+    changes: [
+      'All of your AMS apps live at the same web address, and each one used to clear out every stored copy it found there that was not its own — so opening this app in Safari quietly made the last app you had looked at fetch itself again the next time. It now tidies up only its own older copies and leaves the others alone. Your own data was never involved and is untouched.',
+      'The hidden store this app keeps on your device used to carry a number of its own — the app said 5.21 while that store said 32, and the Main Hub was reading the wrong one and showing you v32. The store is now named after the app version itself, and the hub reads the same number you see in Settings.',
+    ],
+  },
   {
     version: '5.21',
     date: '2026-08-12 · 20:00 CEST',
