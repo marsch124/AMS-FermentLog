@@ -4,9 +4,18 @@
 // Dates/times are the release moment in the user's local zone (Europe/Stockholm —
 // CEST in summer, CET in winter).
 
-export const APP_VERSION = '5.22';
+export const APP_VERSION = '5.23';
 
 export const CHANGELOG = [
+  {
+    version: '5.23',
+    date: '2026-09-10 · 18:45 CEST',
+    title: 'The backup button really saves now 💾',
+    changes: [
+      'Export &amp; backup used a plain download link, which does nothing inside an app opened from the Home Screen — so it could save no file at all, and then note that you had backed up anyway, which also took the backup reminder away. It now hands the file to the normal iPhone share sheet, so you can put it in Files, Mail or anywhere else, and it only counts as a backup once a file has actually been saved. Cancelling the share sheet no longer counts.',
+      'The same fault has been fixed in AMS CountDown, PackTrack, ColdShower and TechLingo.',
+    ],
+  },
   {
     version: '5.22',
     date: '2026-09-04 · 19:20 CEST',

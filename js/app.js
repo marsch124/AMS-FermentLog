@@ -112,9 +112,29 @@ function backupDue(hasData) {
   if (!anchor) { anchor = new Date().toISOString(); try { localStorage.setItem(BACKUP_ANCHOR_KEY, anchor); } catch {} }
   return daysSinceISO(anchor) >= cad;
 }
+// A plain download link is inert inside an app opened from the Home Screen, so this
+// could save NOTHING and still call markBackedUp() — which also clears the snooze and
+// takes the backup banner away. Share sheet first; only a real save counts as a backup.
 async function exportBackup() {
-  downloadFile(await db.exportJSON(), `fermentlog-backup-${todayISO()}.json`, 'application/json');
-  markBackedUp();
+  const json = await db.exportJSON();
+  const name = `fermentlog-backup-${todayISO()}.json`;
+  const blob = new Blob([json], { type: 'application/json' });
+  const file = new File([blob], name, { type: 'application/json' });
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: 'FermentLog backup' });
+      markBackedUp();
+      return true;
+    } catch (err) {
+      return false;                    // cancelled or failed — no file, so no stamp
+    }
+  }
+  try {                                // desktop browsers, where a download works
+    downloadFile(json, name, 'application/json');
+    markBackedUp();
+    return true;
+  } catch (err) { return false; }
 }
 
 // ---------- People (who's logging) ----------
