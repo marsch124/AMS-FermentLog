@@ -8,6 +8,11 @@
 const APP_V = (new URL(self.location.href).searchParams.get('v') || 'dev').replace(/^v/, '');
 const PREFIX = 'fermentlog-v';
 const CACHE = PREFIX + APP_V;
+/* A FermentLog page from before 5.21 asks for this file WITHOUT ?v=, and it has no way to tell a new
+   worker to take over. On the iPhone such a worker can wait for ever (found 25 Nov 2026: a Home Screen
+   icon stuck on 5.17). So for those old pages we take over at once and reload them into the new app.
+   Pages from 5.21 on always send ?v= and keep their "update ready" prompt. */
+const OLD_PAGE = !new URL(self.location.href).searchParams.get('v');
 const ASSETS = [
   './',
   './index.html',
@@ -27,7 +32,7 @@ const ASSETS = [
 self.addEventListener('install', (e) => {
   // Don't auto-skip: a new version waits until the page tells it to activate,
   // so we can show an "update ready" prompt instead of swapping under the user.
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(ASSETS)).then(() => (OLD_PAGE ? self.skipWaiting() : undefined)));
 });
 
 // The page posts 'SKIP_WAITING' when the user taps "Refresh".
@@ -37,6 +42,9 @@ self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => Promise.all(keys.filter((k) => k.startsWith(PREFIX) && k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
+      .then(() => (OLD_PAGE
+        ? self.clients.matchAll({ type: 'window' }).then((cs) => Promise.all(cs.map((c) => c.navigate(c.url).catch(() => {}))))
+        : undefined))
   );
 });
 

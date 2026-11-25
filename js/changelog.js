@@ -4,9 +4,19 @@
 // Dates/times are the release moment in the user's local zone (Europe/Stockholm —
 // CEST in summer, CET in winter).
 
-export const APP_VERSION = '5.24';
+export const APP_VERSION = '5.25';
 
 export const CHANGELOG = [
+  {
+    version: '5.25',
+    date: '2026-11-25 · 11:45 CET',
+    title: 'An old Home Screen icon updates itself again 🔄',
+    changes: [
+      'Fixed: a FermentLog put on the Home Screen before August could stay on its old version for ever (seen: 5.17, while the newest was 5.24). Two things were wrong. Its old web address had been taken away, so it found nothing to update from — that address is back. And an app that old has no way to say “yes, switch to the new version”, so on the iPhone the new version waited and never took over — it now takes over by itself and the app reloads once.',
+      'Before: such an icon showed 5.17 with none of the changes since July. Now: open it once with internet on, and within a few seconds it reloads as the newest version with all your jars still there.',
+      'Nothing changes for an app that was already up to date: it still shows “update ready” and waits for your tap.',
+    ],
+  },
   {
     version: '5.24',
     date: '2026-11-25 · 11:04 CET',

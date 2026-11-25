@@ -2424,13 +2424,19 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
       const reg = await navigator.serviceWorker.register('./service-worker.js?v=' + APP_VERSION);
-      if (reg.waiting && navigator.serviceWorker.controller) showUpdateBanner(reg.waiting);
+      // A worker that came in through a page from before 5.21 carries no version in its address. It holds
+      // the very same files, so the properly named one takes over quietly — no "update ready" prompt for it.
+      const offer = (worker) => {
+        const ctl = navigator.serviceWorker.controller;
+        if (!ctl) return;
+        if (!/[?&]v=/.test(ctl.scriptURL)) { worker.postMessage('SKIP_WAITING'); return; }
+        showUpdateBanner(worker);
+      };
+      if (reg.waiting) offer(reg.waiting);
       reg.addEventListener('updatefound', () => {
         const nw = reg.installing;
         if (!nw) return;
-        nw.addEventListener('statechange', () => {
-          if (nw.state === 'installed' && navigator.serviceWorker.controller) showUpdateBanner(nw);
-        });
+        nw.addEventListener('statechange', () => { if (nw.state === 'installed') offer(nw); });
       });
       // Check for a new deploy hourly while the app stays open.
       setInterval(() => reg.update().catch(() => {}), 60 * 60 * 1000);
