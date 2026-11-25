@@ -53,10 +53,23 @@ You can start from a saved **batch template**, or just describe/dictate the jar 
 
 ## 3. Following a batch over time
 
-Open any batch to see its detail. Add **timeline check-ins** as it ferments (type a note, or
-tap **✨ Add by voice** and say *"day 4, tangy and crunchy"*), tap **🧊 Move to fridge** when
-it's done, and **record the outcome** — rate taste, sourness, crunch and overall, mark
-success, and note any problems. You can also **Duplicate**, **Share**, **Print**, or get
+Open any batch to see its detail. The **Timeline** is the jar's whole diary, oldest line first.
+Each line shows its **date**, its **time**, a small tag and the text. There are two kinds:
+
+- **Did** (orange tag) — something you did: chopped the cabbage, added 2% salt, burped the jar.
+- **Taste** (green tag) — a taste-test note, as before.
+
+To add a line, pick **What I did** or **Taste test**, check the date and time (filled with now),
+type the text and tap **Add**. In *What I did* you can type several lines, or paste a whole
+numbered list: every line becomes its own step, list numbers and bullets are removed, and all of
+them get the chosen date and time. Tap a line to change its date, time or words (Cancel / Save);
+the **✕** at its right end deletes it. Steps do **not** move the taste-test reminder — only
+*Taste* lines do. Older taste notes have no time and simply show their date. Steps are included
+in search, Share, Print and the spreadsheet export (a column **What I did**).
+
+You can also tap **✨ Add by voice** and say *"day 4, tangy and crunchy"*, tap **🧊 Move to
+fridge** when it's done, and **record the outcome** — rate taste, sourness, crunch and overall,
+mark success, and note any problems. You can also **Duplicate**, **Share**, **Print**, or get
 **✨ AI tips** for the batch's setup.
 
 <img src="img/batch-detail.png" width="320" alt="A batch detail with timeline and outcome">
@@ -113,7 +126,7 @@ a key.
 
 ---
 
-## 7. Managing your lists, backups & privacy
+## 8. Managing your lists, backups & privacy
 
 From **Settings** you can:
 
@@ -130,7 +143,7 @@ only time data leaves your phone is the optional AI feature, and then only the t
 
 ---
 
-## 8. Installing & staying up to date
+## 9. Installing & staying up to date
 
 Open the site in your phone's browser and choose **Add to Home Screen** to install it as an app.
 After an update, fully close and reopen the app once or twice to pick up the new version.
@@ -139,6 +152,41 @@ Every improvement is listed under **Settings → What's new**, newest first, wit
 time** it shipped (your local Central European time).
 
 <img src="img/changelog.png" width="320" alt="The in-app changelog">
+
+---
+
+## 10. Signs in this app
+
+Every mark and colour in FermentLog means one thing. Here is what each one tells you.
+
+**Colours**
+
+- **Orange pill “Fermenting”** — the jar is still on the counter, working away.
+- **Blue pill “In fridge”** — the jar has been moved to the fridge.
+- **Green pill “Done”** — the jar is finished.
+- **Purple pill** — a recipe or bake category (for example Sourdough).
+- **Orange tag “Did”** — a line in a jar’s Timeline about something you did, such as chopping the cabbage or burping the jar.
+- **Green tag “Taste”** — a line in a jar’s Timeline that is a taste-test note.
+- **Green brine figure** — the brine is inside the 2–3% sweet spot.
+- **Red tag** — a problem you noted, such as mould or mushy.
+- **Orange bar** — something needs you: a taste test is due.
+
+**Marks**
+
+- **★ ☆ stars** — a rating from 1 to 5. A filled star counts, an empty star does not. “no verdict yet” means nothing is rated.
+- **✓ tick** — this is in order: the brine is in the 2–3% sweet spot, your key is saved, reminders are on.
+- **Green box “Success”**, **red box “Didn’t work out”** — your own verdict on a finished jar (words and colour only, no ✓ or ✕).
+- **↕ typical veg range is 2–3%** — your brine is outside the usual range. It is a hint, not an error.
+- **⏰** — a taste test is due. On the Home list it sits next to the jar’s name.
+- **● (orange dot)** — next to “What’s new” in Settings: there is a new version you have not read yet.
+- **✕ cross** — take this one away: a Timeline line (it asks first), a photo, a recipe step, a lesson.
+- **✨** — the optional AI helper. It only works if you have saved your own key in Settings.
+- **🧊** — move the jar to the fridge.
+- **⬇️ “Time for a backup”** — it has been a while since you saved a copy of your log.
+- **⚠** — something went wrong, and the words next to it say what.
+- **＋ (plus)** — start something new: a new batch.
+- **🔍** — search across jars, bakes and recipes.
+- **⭐ Save as a batch template** — keep these settings to start future jars quickly.
 
 ---
 

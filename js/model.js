@@ -31,6 +31,7 @@ export function coerceBatch(b) {
   if (!b || typeof b !== 'object') return b;
   b.additions = asArray(b.additions);
   b.checkIns = asArray(b.checkIns);
+  b.steps = asArray(b.steps);
   b.photos = asArray(b.photos);
   return b;
 }
@@ -217,6 +218,53 @@ export function dueBatches(batches, today = new Date()) {
   return (Array.isArray(batches) ? batches : []).filter((b) => isCheckDue(b, today));
 }
 
+// ---------- Timeline: what you did + taste tests ----------
+
+/**
+ * Turn typed or pasted text into step lines: one step per line, with list
+ * numbers ("3.", "4)") and bullets removed and blank lines dropped. A figure
+ * that belongs to the step itself ("2% salt", "2.5 kg cabbage") is kept.
+ */
+export function parseStepLines(text) {
+  return String(text == null ? '' : text).split(/\r?\n/)
+    .map((l) => l.replace(/^[\s\u2022\u00b7*\-\u2013\u2014]*(?:\d{1,3}[.)](?!\d)\s*)?/, '').trim())
+    .filter(Boolean);
+}
+
+/** Steps ready to store on a batch: every line of `text`, all at the same date and time. */
+export function stepsFromText(text, date, time = '') {
+  return parseStepLines(text).map((t) => ({ date: date || '', time: time || '', text: t }));
+}
+
+/**
+ * A batch's whole diary, oldest first: the steps you took ('did') and your
+ * taste tests ('taste') in one list. Each entry carries the index of its
+ * source record so the screen can change or delete it. Lines of the same
+ * minute keep the order they were entered in; a line without a time (older
+ * taste notes) sits at the end of its day.
+ */
+export function timelineEntries(batch) {
+  if (!batch) return [];
+  const out = [];
+  (Array.isArray(batch.steps) ? batch.steps : []).forEach((s, index) => {
+    if (s) out.push({ kind: 'did', index, date: s.date || '', time: s.time || '', text: s.text || '' });
+  });
+  (Array.isArray(batch.checkIns) ? batch.checkIns : []).forEach((c, index) => {
+    if (c) out.push({ kind: 'taste', index, date: c.date || '', time: c.time || '', text: c.tasteNote || '' });
+  });
+  const key = (e) => `${e.date} ${e.time || '99:99'}`;
+  return out
+    .map((e, order) => ({ e, order }))
+    .sort((a, b) => key(a.e).localeCompare(key(b.e)) || a.order - b.order)
+    .map((x) => x.e);
+}
+
+/** The steps as plain lines ("2026-11-25 10:30 — Chopped the cabbage") for sharing and export. */
+export function stepsText(batch) {
+  return timelineEntries(batch).filter((e) => e.kind === 'did')
+    .map((e) => `${[e.date, e.time].filter(Boolean).join(' ')} — ${e.text}`).join('\n');
+}
+
 // ---------- Statistics ----------
 
 function median(nums) {
@@ -382,6 +430,7 @@ export function toCSV(batches) {
     ['Problems', (b) => ((b.outcome && b.outcome.problems) || []).join('; ')],
     ['Notes', (b) => b.notes],
     ['Logged by', (b) => b.loggedBy],
+    ['What I did', (b) => stepsText(b)],
   ];
   const header = cols.map((c) => c[0]).join(',');
   const rows = (Array.isArray(batches) ? batches : []).map((b) => cols.map((c) => csvCell(c[1](b))).join(','));
@@ -449,6 +498,7 @@ export function exportSheets({ batches = [], bakes = [], recipes = [], lessons =
         { header: 'Status', width: 12 }, { header: 'Success', width: 9 }, { header: 'Taste', width: 7 },
         { header: 'Sourness', width: 9 }, { header: 'Crunch', width: 8 }, { header: 'Overall', width: 12 },
         { header: 'Problems', width: 24 }, { header: 'Notes', width: 40 }, { header: 'Logged by', width: 14 },
+        { header: 'What I did', width: 50 },
       ],
       rows: batches.map((b) => {
         const brine = computeBrinePercent(b.saltGrams, b.waterMl);
@@ -459,7 +509,7 @@ export function exportSheets({ batches = [], bakes = [], recipes = [], lessons =
           b.vesselType || '', b.weightType || '', b.lidType || '', (b.additions || []).join('\n'),
           statusLabel(batchStatus(b)), o.recorded ? (o.success ? 'Yes' : 'No') : '',
           num(o.taste), num(o.sourness), num(o.crunch), stars(o.overall),
-          (o.problems || []).join('\n'), b.notes || '', b.loggedBy || '',
+          (o.problems || []).join('\n'), b.notes || '', b.loggedBy || '', stepsText(b),
         ];
       }),
     },
@@ -529,6 +579,7 @@ export function newBatch(now = new Date()) {
     lidType: 'Burping / self-venting lid',
     remindEveryDays: DEFAULT_REMIND_DAYS,
     checkIns: [],
+    steps: [],
     movedToFridgeDate: '',
     outcome: null,
     photos: [],
@@ -734,7 +785,7 @@ const searchNorm = (s) => String(s == null ? '' : s).toLowerCase();
 
 export function batchSearchText(b) {
   return [b.name, b.vegetable, b.form, b.vesselType, b.lidType, b.weightType, b.notes,
-    ...(b.additions || []), ...((b.checkIns || []).map((c) => c && c.tasteNote))].map(searchNorm).join(' ');
+    ...(b.additions || []), ...((b.checkIns || []).map((c) => c && c.tasteNote)), ...((b.steps || []).map((s) => s && s.text))].map(searchNorm).join(' ');
 }
 
 export function bakeSearchText(bk) {

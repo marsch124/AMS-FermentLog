@@ -7,7 +7,7 @@ import {
   usedVegetables, mergeVegetables, usedSpices, mergeSpices, renamedList, withoutItem,
   RECIPE_CATEGORIES, newRecipe, duplicateRecipe, sampleSourdoughRecipe,
   BAKE_CATEGORIES, BAKE_PROBLEMS, newBake, overallBakeRating, duplicateBake, summarizeBakes,
-  searchAll,
+  searchAll, stepsFromText, timelineEntries,
 } from './model.js';
 import { APP_VERSION, CHANGELOG } from './changelog.js';
 import {
@@ -25,6 +25,11 @@ const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<
 const fmtBrine = (b) => { const v = computeBrinePercent(b.saltGrams, b.waterMl); return v == null ? '—' : `${v.toFixed(1)}%`; };
 const todayISO = () => new Date().toISOString().slice(0, 10);
 const pad2 = (n) => String(n).padStart(2, '0');
+// Now, by the clock on this device: the date and the time the timeline fields start with.
+function nowLocal() {
+  const d = new Date();
+  return { date: `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`, time: `${pad2(d.getHours())}:${pad2(d.getMinutes())}` };
+}
 // Format a timestamp in ISO style using local time: YYYY-MM-DD and YYYY-MM-DD HH:MM.
 function fmtDate(iso) { const d = new Date(iso); return isNaN(d) ? '' : `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
 function fmtDateTime(iso) { const d = new Date(iso); return isNaN(d) ? '' : `${fmtDate(iso)} ${pad2(d.getHours())}:${pad2(d.getMinutes())}`; }
@@ -84,6 +89,11 @@ let pendingBatchDraft = null; // a batch pre-filled from a recipe, for the New f
 const LOGVIEW_KEY = 'fermentlog-logview';
 function logView() { try { return localStorage.getItem(LOGVIEW_KEY) === 'bakes' ? 'bakes' : 'jars'; } catch { return 'jars'; } }
 function setLogView(v) { try { localStorage.setItem(LOGVIEW_KEY, v); } catch {} }
+// Which kind of timeline line the jar page adds: 'did' (a step you took) or 'taste' (a taste test).
+const TLKIND_KEY = 'fermentlog-timeline-kind';
+function timelineKind() { try { return localStorage.getItem(TLKIND_KEY) === 'taste' ? 'taste' : 'did'; } catch { return 'did'; } }
+function setTimelineKind(v) { try { localStorage.setItem(TLKIND_KEY, v); } catch {} }
+const TL_WORD = { did: 'Did', taste: 'Taste' };
 const INSIGHTSVIEW_KEY = 'fermentlog-insightsview';
 function insightsView() { try { return localStorage.getItem(INSIGHTSVIEW_KEY) === 'bakes' ? 'bakes' : 'ferments'; } catch { return 'ferments'; } }
 function setInsightsView(v) { try { localStorage.setItem(INSIGHTSVIEW_KEY, v); } catch {} }
@@ -886,7 +896,7 @@ function shrinkImage(file, maxDim, quality) {
 }
 
 // ---------- Batch detail ----------
-async function renderDetail(id) {
+async function renderDetail(id, keepScroll = null) {
   const b = await db.getBatch(id);
   if (!b) return location.assign('#/');
   const status = batchStatus(b);
@@ -898,10 +908,17 @@ async function renderDetail(id) {
   const photos = (b.photos || []).map((s) => `<img class="detail-photo" src="${s}" alt="">`).join('');
   const additions = (b.additions || []).length ? (b.additions).map((a) => `<span class="tag">${esc(a)}</span>`).join('') : '<span class="muted">none</span>';
 
-  const checkIns = (b.checkIns || []).length
-    ? (b.checkIns).map((c, i) => `<li><span class="ci-date">${c.date}</span><span class="ci-note">${esc(c.tasteNote || '')}</span>
-        <button class="ci-del" data-i="${i}" aria-label="Delete check-in">✕</button></li>`).join('')
-    : '<li class="muted">No check-ins yet.</li>';
+  // One diary for the jar: what you did and how it tasted, oldest first.
+  const tl = timelineEntries(b);
+  const now = nowLocal();
+  const tlRows = tl.length
+    ? tl.map((e) => `<li class="tl-row" data-kind="${e.kind}" data-i="${e.index}">
+        <button type="button" class="tl-main" data-testid="tl-line">
+          <span class="tl-meta"><span class="ci-date">${esc(e.date)}${e.time ? ` ${esc(e.time)}` : ''}</span><span class="tl-tag tl-${e.kind}">${TL_WORD[e.kind]}</span></span>
+          <span class="ci-note">${esc(e.text)}</span>
+        </button>
+        <button type="button" class="ci-del no-print" aria-label="Delete this line">✕</button></li>`).join('')
+    : '<li class="muted">Nothing logged yet.</li>';
 
   const el = h(`<section class="screen">
     <header class="topbar no-print">
@@ -931,13 +948,20 @@ async function renderDetail(id) {
 
       <div class="detail-block">
         <h3>Timeline</h3>
-        <ul class="checkins">${checkIns}</ul>
-        <form id="ciForm" class="ci-form no-print">
-          <input type="date" name="date" value="${todayISO()}" required>
-          <input name="tasteNote" placeholder="Taste test note…" required>
-          <button class="btn ghost small">Add</button>
+        <ul class="checkins" id="tlList">${tlRows}</ul>
+        ${tl.length ? '<p class="hint tl-hint no-print">Tap a line to change it · ✕ deletes it</p>' : ''}
+        <div class="segmented tl-kind no-print" id="tlKind">
+          <button type="button" class="seg" data-v="did">What I did</button>
+          <button type="button" class="seg" data-v="taste">Taste test</button>
+        </div>
+        <form id="ciForm" class="ci-form tl-form no-print">
+          <input type="date" name="date" value="${now.date}" required aria-label="Date">
+          <input type="time" name="time" value="${now.time}" aria-label="Time">
+          <textarea name="text" rows="3" required aria-label="What to add"></textarea>
+          <button class="btn primary small" id="tlAdd">Add</button>
         </form>
-        <div class="ai-inline no-print">
+        <div class="hint" id="tlHelp"></div>
+        <div class="ai-inline no-print" id="tlVoice">
           <textarea id="ciAiText" rows="2" placeholder="✨ …or dictate: “day 4, tangy and still crunchy” — tap the 🎤 and talk"></textarea>
           <button type="button" id="ciAiBtn" class="btn ghost small">✨ Add by voice</button>
           <div id="ciAiStatus" class="hint"></div>
@@ -960,6 +984,9 @@ async function renderDetail(id) {
     </div>
   </section>`);
   swap(el);
+  if (keepScroll != null) window.scrollTo(0, keepScroll);
+  // Redraw this page where you are, instead of jumping back to the top.
+  const refresh = () => renderDetail(id, window.scrollY);
 
   const ciAiBtn = $('#ciAiBtn', el);
   ciAiBtn.addEventListener('click', async () => {
@@ -972,33 +999,98 @@ async function renderDetail(id) {
       const ci = await buildCheckInFromText(text, { startDate: b.startDate });
       b.checkIns = b.checkIns || [];
       b.checkIns.push(ci);
-      b.checkIns.sort((x, y) => x.date.localeCompare(y.date));
-      await db.saveBatch(b);
-      renderDetail(id);
+      sortCheckIns(b);
+      if (await saveGuard(db.saveBatch(b))) refresh();
     } catch (e) { ciAiBtn.disabled = false; status.className = 'hint caution'; status.textContent = '⚠ ' + e.message; }
   });
 
   $('#tipsBtn', el).addEventListener('click', () => suggestBatchTips(b, id, $('#tipsArea', el)));
 
-  $('#ciForm', el).addEventListener('submit', async (e) => {
+  // --- Timeline: add, change and delete lines ---
+  const tlForm = $('#ciForm', el);
+  const showKind = (kind) => {
+    el.querySelectorAll('#tlKind .seg').forEach((s) => s.classList.toggle('on', s.dataset.v === kind));
+    tlForm.dataset.kind = kind;
+    tlForm.elements.text.placeholder = kind === 'did'
+      ? 'What did you do? One step per line…'
+      : 'How does it taste, smell and look?';
+    $('#tlHelp', el).textContent = kind === 'did'
+      ? 'One step per line. Paste a whole list and every line becomes its own step — list numbers are removed.'
+      : 'A taste test also moves the next taste-test reminder.';
+    $('#tlVoice', el).hidden = kind !== 'taste';
+  };
+  showKind(timelineKind());
+  el.querySelectorAll('#tlKind .seg').forEach((s) => s.addEventListener('click', () => { setTimelineKind(s.dataset.v); showKind(s.dataset.v); }));
+
+  tlForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const fd = new FormData(e.target);
-    b.checkIns = b.checkIns || [];
-    b.checkIns.push({ date: fd.get('date'), tasteNote: fd.get('tasteNote').trim() });
-    b.checkIns.sort((x, y) => x.date.localeCompare(y.date));
-    await db.saveBatch(b);
-    renderDetail(id);
+    const fd = new FormData(tlForm);
+    const date = fd.get('date');
+    const time = fd.get('time') || '';
+    const text = String(fd.get('text') || '');
+    if (tlForm.dataset.kind === 'did') {
+      const added = stepsFromText(text, date, time);
+      if (!added.length) return;
+      b.steps = [...(b.steps || []), ...added];
+    } else {
+      const note = text.replace(/\s*\n\s*/g, ' ').trim();
+      if (!note) return;
+      b.checkIns = b.checkIns || [];
+      b.checkIns.push({ date, time, tasteNote: note });
+      sortCheckIns(b);
+    }
+    if (await saveGuard(db.saveBatch(b))) refresh();
   });
-  el.querySelectorAll('.ci-del').forEach((btn) => btn.addEventListener('click', async () => {
-    b.checkIns.splice(Number(btn.dataset.i), 1);
-    await db.saveBatch(b);
-    renderDetail(id);
+
+  // The record behind a line, whichever kind it is.
+  const recordOf = (li) => {
+    const list = li.dataset.kind === 'did' ? b.steps : b.checkIns;
+    return { list, i: Number(li.dataset.i), field: li.dataset.kind === 'did' ? 'text' : 'tasteNote' };
+  };
+  el.querySelectorAll('.tl-row .ci-del').forEach((btn) => btn.addEventListener('click', async () => {
+    const { list, i } = recordOf(btn.closest('.tl-row'));
+    if (!confirm('Delete this line?')) return;
+    list.splice(i, 1);
+    if (await saveGuard(db.saveBatch(b))) refresh();
+  }));
+  el.querySelectorAll('.tl-row .tl-main').forEach((main) => main.addEventListener('click', () => {
+    const li = main.closest('.tl-row');
+    const { list, i, field } = recordOf(li);
+    const rec = list[i];
+    if (!rec) return;
+    const form = h(`<form class="tl-edit" data-testid="tl-edit">
+      <div class="tl-edit-when">
+        <input type="date" name="date" value="${esc(rec.date || '')}" required aria-label="Date">
+        <input type="time" name="time" value="${esc(rec.time || '')}" aria-label="Time">
+        <span class="tl-tag tl-${li.dataset.kind}">${TL_WORD[li.dataset.kind]}</span>
+      </div>
+      <textarea name="text" rows="2" required aria-label="Words">${esc(rec[field] || '')}</textarea>
+      <div class="tl-edit-actions">
+        <button type="button" class="btn ghost small" data-act="cancel">Cancel</button>
+        <button class="btn primary small" data-act="save">Save</button>
+      </div>
+    </form>`);
+    li.replaceChildren(form);
+    li.classList.add('editing');
+    form.elements.text.focus();
+    $('[data-act=cancel]', form).addEventListener('click', () => refresh());
+    form.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') refresh(); });
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const text = form.elements.text.value.replace(/\s*\n\s*/g, ' ').trim();
+      if (!text) return;
+      rec.date = form.elements.date.value;
+      rec.time = form.elements.time.value || '';
+      rec[field] = text;
+      if (li.dataset.kind === 'taste') sortCheckIns(b);
+      if (await saveGuard(db.saveBatch(b))) refresh();
+    });
   }));
   const fridge = $('#fridgeBtn', el);
   if (fridge) fridge.addEventListener('click', async () => {
     b.movedToFridgeDate = todayISO();
     await db.saveBatch(b);
-    renderDetail(id);
+    refresh();
   });
   $('#dupBtn', el).addEventListener('click', async () => {
     const dup = duplicateBatch(b);
@@ -1008,6 +1100,12 @@ async function renderDetail(id) {
   $('#shareBtn', el).addEventListener('click', () => shareBatch(b));
   $('#printBtn', el).addEventListener('click', () => window.print());
   renderOutcome($('#outcomeArea', el), b, id);
+}
+
+// Taste tests in order of their day and time (a note without a time ends its day).
+function sortCheckIns(b) {
+  const key = (c) => `${c.date || ''} ${c.time || '99:99'}`;
+  b.checkIns.sort((x, y) => key(x).localeCompare(key(y)));
 }
 
 async function suggestBatchTips(b, id, area) {
@@ -1051,6 +1149,8 @@ function batchSummaryText(b) {
   const r = overallRating(b);
   if (r != null) lines.push(`Result: ${ratingStars(r)}${b.outcome?.success ? ' (success)' : ''}`);
   if (b.notes) lines.push(`Notes: ${b.notes}`);
+  const tl = timelineEntries(b);
+  if (tl.length) lines.push('', 'Timeline:', ...tl.map((e) => `${[e.date, e.time].filter(Boolean).join(' ')} · ${TL_WORD[e.kind]} · ${e.text}`));
   return lines.join('\n');
 }
 
@@ -1069,7 +1169,7 @@ function renderOutcome(container, b, id) {
     const probs = (o.problems || []).length ? (o.problems).map((p) => `<span class="tag warn-tag">${esc(p)}</span>`).join('') : '<span class="muted">none</span>';
     container.innerHTML = `
       <div class="outcome-view">
-        <div class="verdict ${o.success ? 'good' : 'bad'}">${o.success ? '✓ Success' : '✕ Didn’t work out'}</div>
+        <div class="verdict ${o.success ? 'good' : 'bad'}">${o.success ? 'Success' : 'Didn’t work out'}</div>
         <div class="stat-grid small">
           <div class="stat"><span>Taste</span><strong>${ratingStars(o.taste)}</strong></div>
           <div class="stat"><span>Sourness</span><strong>${ratingStars(o.sourness)}</strong></div>
@@ -2099,11 +2199,49 @@ function guideBodyHTML() {
       ${sec('Following a batch over time', `
         <p>Open any batch to see its detail. From here you can:</p>
         <ul>
-          <li>Add <strong>timeline check-ins</strong> as it ferments — type a taste-test note, or tap <strong>✨ Add by voice</strong> and say “day 4, tangy and crunchy”.</li>
+          <li>Keep the jar's diary in its <strong>Timeline</strong> — everything you did and how it tasted, each line with its <strong>date and time</strong>, oldest first.
+            <ul>
+              <li><strong>What I did</strong> — the steps you took: chopped the cabbage, added 2% salt, burped the jar. Type one step per line, or <strong>paste a whole list</strong>: every line becomes its own step and the list numbers are removed. They all get the date and time shown above the box (filled in with now — change it if you did it earlier).</li>
+              <li><strong>Taste test</strong> — how it tastes, smells and looks. Type it, or tap <strong>✨ Add by voice</strong> and say “day 4, tangy and crunchy”. Only a taste test moves the next taste-test reminder; a step does not.</li>
+              <li><strong>Tap a line</strong> to change its date, time or words, then <strong>Save</strong> (or <strong>Cancel</strong>). The <strong>✕</strong> at the end of a line deletes it, after asking.</li>
+              <li>Each line carries a word: <strong>Did</strong> (orange) or <strong>Taste</strong> (green). Your steps are also found by Search and go into Share, Print and the spreadsheet (column “What I did”).</li>
+            </ul></li>
           <li>Tap <strong>🧊 Move to fridge</strong> when it's done fermenting.</li>
           <li><strong>Record the outcome</strong> — rate taste, sourness, crunch and overall, mark success, and note any problems (mould, kahm yeast, mushy…).</li>
           <li><strong>Duplicate</strong>, <strong>Share</strong> or <strong>Print</strong> the batch, or get <strong>✨ AI tips</strong> for its setup.</li>
         </ul>`)}
+
+      ${sec('Signs in this app', `
+<p>Every mark and colour in FermentLog means one thing. Here is what each one tells you.</p>
+<h4>Colours</h4>
+<ul>
+  <li><strong>Orange pill “Fermenting”</strong> — the jar is still on the counter, working away.</li>
+  <li><strong>Blue pill “In fridge”</strong> — the jar has been moved to the fridge.</li>
+  <li><strong>Green pill “Done”</strong> — the jar is finished.</li>
+  <li><strong>Green box “Success”</strong>, <strong>red box “Didn’t work out”</strong> — your own verdict on a finished jar.</li>
+  <li><strong>Purple pill</strong> — a recipe or bake category (for example Sourdough).</li>
+  <li><strong>Orange tag “Did”</strong> — a line in a jar’s Timeline about something you did, such as chopping the cabbage or burping the jar.</li>
+  <li><strong>Green tag “Taste”</strong> — a line in a jar’s Timeline that is a taste-test note.</li>
+  <li><strong>Green brine figure</strong> — the brine is inside the 2–3% sweet spot.</li>
+  <li><strong>Red tag</strong> — a problem you noted, such as mould or mushy.</li>
+  <li><strong>Orange bar</strong> — something needs you: a taste test is due.</li>
+</ul>
+<h4>Marks</h4>
+<ul>
+  <li><strong>★ ☆ stars</strong> — a rating from 1 to 5. A filled star counts, an empty star does not. “no verdict yet” means nothing is rated.</li>
+  <li><strong>✓ tick</strong> — this is in order: the brine is in the 2–3% sweet spot, your key is saved, reminders are on.</li>
+  <li><strong>↕ typical veg range is 2–3%</strong> — your brine is outside the usual range. It is a hint, not an error.</li>
+  <li><strong>⏰</strong> — a taste test is due. On the Home list it sits next to the jar’s name.</li>
+  <li><strong>● (orange dot)</strong> — next to “What’s new” in Settings: there is a new version you have not read yet.</li>
+  <li><strong>✕ cross</strong> — take this one away: a Timeline line (it asks first), a photo, a recipe step, a lesson.</li>
+  <li><strong>✨</strong> — the optional AI helper. It only works if you have saved your own key in Settings.</li>
+  <li><strong>🧊</strong> — move the jar to the fridge.</li>
+  <li><strong>⬇️ “Time for a backup”</strong> — it has been a while since you saved a copy of your log.</li>
+  <li><strong>⚠</strong> — something went wrong, and the words next to it say what.</li>
+  <li><strong>＋ (plus)</strong> — start something new: a new batch.</li>
+  <li><strong>🔍</strong> — search across jars, bakes and recipes.</li>
+  <li><strong>⭐ Save as a batch template</strong> — keep these settings to start future jars quickly.</li>
+</ul>`)}
 
       ${sec('Search', `
         <p>Tap the <strong>${IC.search}</strong> in the Batches or Recipes header to search across <strong>everything at once</strong> — jars, bakes and recipes. Results group by type as you type, and it looks inside names, vegetables and spices, taste-test notes, bake problems, and recipe ingredients, equipment and steps.</p>`)}

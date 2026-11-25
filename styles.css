@@ -477,3 +477,28 @@ svg.gfx { color: var(--brand); display: block; }
   .detail-photo { height: 120px; }
   .chart-card, .stat { break-inside: avoid; }
 }
+
+/* --- Timeline: what you did + taste tests (5.24) --- */
+.checkins li.tl-row { align-items: flex-start; }
+.tl-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left;
+  background: none; border: none; padding: 0; margin: 0; color: inherit; font: inherit; cursor: pointer; }
+.tl-meta { display: flex; align-items: center; gap: 6px; font-size: .8rem; }
+.tl-meta .ci-date { margin-right: 0; }
+.tl-tag { font-size: .7rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; white-space: nowrap; }
+.tl-did { background: color-mix(in srgb, var(--brand) 18%, transparent); color: var(--brand-ink); }
+.tl-taste { background: color-mix(in srgb, var(--green) 20%, transparent); color: var(--green); }
+.tl-hint { margin: -6px 0 10px; color: var(--muted); font-size: .8rem; }
+.tl-kind { display: flex; width: 100%; margin-bottom: 8px; }
+.tl-kind .seg { flex: 1; }
+.tl-form { margin-bottom: 6px; }
+.tl-form input[type=date], .tl-form input[type=time] { flex: 1; min-width: 0; }
+.tl-form textarea, .tl-edit textarea { flex-basis: 100%; width: 100%; padding: 10px; border: 1.5px solid var(--line);
+  border-radius: 10px; background: var(--surface-2); color: var(--ink); font-family: inherit; font-size: 1rem; resize: vertical; }
+.tl-form textarea:focus, .tl-edit textarea:focus, .tl-edit input:focus { outline: 2px solid var(--brand); border-color: var(--brand); }
+.tl-form .btn { margin-left: auto; }
+.tl-edit { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.tl-edit-when { display: flex; align-items: center; gap: 6px; }
+.tl-edit-when input { flex: 1; min-width: 0; padding: 8px; border: 1.5px solid var(--line); border-radius: 10px;
+  background: var(--surface-2); color: var(--ink); font-family: inherit; font-size: 1rem; }
+.tl-edit-actions { display: flex; justify-content: flex-end; gap: 8px; }
+[hidden] { display: none !important; }

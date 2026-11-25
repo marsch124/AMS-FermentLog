@@ -27,6 +27,7 @@ commit times.**
 | **5.0** | 18:52 | Bakes — sourdough gets its own log |
 | **5.1** | 19:07 | Bake insights, a lessons notebook, and AI bakes |
 | **5.2** | 19:18 | Unified search |
+| **5.24** | 25 Nov 2026 | The jar page Timeline becomes the jar's diary |
 
 ---
 
@@ -264,6 +265,24 @@ equipment and steps — and multiple words are an AND search. Tap a result to op
 
 ---
 
+## 16. v5.24 — the jar's diary (25 Nov 2026)
+
+> *The Timeline held only taste-test notes. It should hold everything I do to the jar.*
+
+- The Timeline on a jar's page is now the jar's whole diary, oldest first. Each line shows its
+  **date**, a new **time** (hours and minutes), a small tag — **Did** (orange) or **Taste**
+  (green) — and the text.
+- Adding: a switch **What I did | Taste test**, a date and a time (filled with now), a text box
+  and a full-colour **Add** button. In *What I did* several lines, or a pasted numbered list,
+  become one step each (numbers and bullets removed, all with the chosen date and time).
+- Tap a line to change its date, time or words (Cancel / Save); the ✕ still deletes it.
+- Only **Taste** lines move the taste-test reminder; steps do not. Older taste notes have no
+  time and just show their date.
+- Steps are in search, Share, Print and the spreadsheet/CSV export (new column **What I did**).
+- New guide section **Signs in this app**: every mark and colour with its meaning.
+
+---
+
 ## How it was built (the working method)
 
 The same disciplined loop ran on every version:
@@ -284,7 +303,7 @@ The same disciplined loop ran on every version:
 4. **Everything committed & pushed** to the working branch and mirrored to `main`, with a
    changelog entry and a bumped offline-cache version each time.
 
-## Where it stands now (v5.2)
+## Where it stands now (v5.24)
 
 A private, offline-first PWA that logs **fermentation jars** and **bakes**, keeps a
 **recipe book** (with a built-in sourdough example), shows **insights** for both, offers an

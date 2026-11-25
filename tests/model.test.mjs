@@ -11,7 +11,7 @@ import {
   newRecipe, duplicateRecipe, sampleSourdoughRecipe, RECIPE_CATEGORIES,
   newBake, overallBakeRating, duplicateBake, BAKE_CATEGORIES, summarizeBakes,
   coerceBatch, coerceBake, coerceRecipe,
-  searchAll,
+  searchAll, parseStepLines, stepsFromText, timelineEntries, stepsText,
 } from '../js/model.js';
 import { APP_VERSION, CHANGELOG } from '../js/changelog.js';
 import { normalizeRecipe, extractJSON, normalizeBatch, normalizeCheckIn, normalizeBake } from '../js/ai.js';
@@ -542,4 +542,33 @@ test('coerceBatch/coerceBake/coerceRecipe: guarantee array/object shapes', () =>
   assert.deepEqual(coerceBatch({ additions: ['garlic'] }).additions, ['garlic']);
   // non-objects pass through untouched
   assert.equal(coerceBatch(null), null);
+});
+
+// ---------- Timeline: steps + taste tests ----------
+test('parseStepLines: a pasted numbered list becomes one clean step per line', () => {
+  const pasted = '1. Saved the outer cabbage leaves\n2. Chopped the cabbage\n3. 2% of the weight salt\n\n10) Burp, every day\n\t\u2022\t\t11.\tTry after three or four days\n- 2.5 kg cabbage';
+  assert.deepEqual(parseStepLines(pasted), [
+    'Saved the outer cabbage leaves', 'Chopped the cabbage', '2% of the weight salt',
+    'Burp, every day', 'Try after three or four days', '2.5 kg cabbage',
+  ]);
+  assert.deepEqual(parseStepLines(''), []);
+  assert.deepEqual(parseStepLines(null), []);
+});
+
+test('timelineEntries: steps and taste tests in one list, oldest first, entry order kept', () => {
+  const b = {
+    steps: [...stepsFromText('Chopped\nSalted', '2026-11-25', '10:30'), { date: '2026-11-26', time: '08:00', text: 'Burped' }],
+    checkIns: [{ date: '2026-11-25', tasteNote: 'old note, no time' }, { date: '2026-11-28', time: '18:15', tasteNote: 'Tangy' }],
+  };
+  const tl = timelineEntries(b);
+  assert.deepEqual(tl.map((e) => `${e.kind}:${e.text}`),
+    ['did:Chopped', 'did:Salted', 'taste:old note, no time', 'did:Burped', 'taste:Tangy']);
+  assert.equal(tl[1].index, 1);              // points back at batch.steps[1]
+  assert.equal(tl[4].index, 1);              // …and at batch.checkIns[1]
+  assert.equal(stepsText(b), '2026-11-25 10:30 — Chopped\n2026-11-25 10:30 — Salted\n2026-11-26 08:00 — Burped');
+  assert.deepEqual(timelineEntries(null), []);
+  // steps never move the taste-test reminder: it still counts from the last taste test
+  assert.equal(nextCheckDue({ startDate: '2026-11-25', remindEveryDays: 3, ...b }), '2026-12-01');
+  assert.deepEqual(coerceBatch({ id: 'x' }).steps, []);
+  assert.ok(toCSV([b]).split('\n')[0].endsWith(',What I did'));
 });

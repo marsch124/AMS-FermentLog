@@ -15,7 +15,7 @@ No account, no server, no cost.
   brine %, with a hint for the recommended 2–3% range. Start from a **saved recipe**
   or **duplicate** a previous batch in one tap.
 - **Track everything:** conditions, **spices** (add your own and they're remembered),
-  equipment (vessel / weight / lid), timeline check-ins (add & remove individually),
+  equipment (vessel / weight / lid), a **timeline diary** per jar (steps you did and taste notes, each with date and time; add, edit & remove individually),
   outcome ratings (taste, sourness, crunch, overall), problems seen (mould, kahm yeast,
   mushy…), photos (reorder / remove), and free-text notes.
 - **Add your own vegetables & spices** — type a new one once and it becomes a normal,

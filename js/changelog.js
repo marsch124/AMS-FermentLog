@@ -4,9 +4,28 @@
 // Dates/times are the release moment in the user's local zone (Europe/Stockholm —
 // CEST in summer, CET in winter).
 
-export const APP_VERSION = '5.23';
+export const APP_VERSION = '5.24';
 
 export const CHANGELOG = [
+  {
+    version: '5.24',
+    date: '2026-11-25 · 11:04 CET',
+    title: 'The jar’s whole diary: what you did, and when 📝',
+    changes: [
+      'New: a jar’s Timeline now holds everything you did, not only how it tasted. Above the box there is a switch — “What I did” or “Taste test”. Before, the Timeline took taste-test notes only.',
+      'New: every line has a time as well as a date. Both are filled in with now; change them if you did it earlier. Before, a line had a date only. Your older taste notes keep their date and simply show no time.',
+      'New: paste a whole list. In “What I did”, every line you type or paste becomes its own step, and list numbers (“1.”, “2)”) and bullets are taken away — so a recipe you wrote down elsewhere goes in with one paste. A figure that belongs to the step, such as “2% salt”, stays.',
+      'New: tap a line to change its date, time or words, with Cancel and Save. Before, a line could only be deleted and written again.',
+      'New: each line carries a word — “Did” in orange or “Taste” in green — so you can tell the two apart at a glance. Everything is in one list, oldest first.',
+      'Changed: the ✕ at the end of a line now asks “Delete this line?” first. Before, one stray tap deleted it at once.',
+      'Changed: after you add, change or delete a line the page stays where you were. Before, it jumped back to the top each time.',
+      'Changed: the Add button is now full orange instead of grey.',
+      'Unchanged on purpose: only a taste test moves the next taste-test reminder. A step such as “burped the jar” does not.',
+      'Your steps are found by Search, and they go into Share, Print and the spreadsheet and CSV export (a new last column, “What I did”).',
+      'New in How it works: “Signs in this app” — every mark and colour and what it means, in a few words.',
+      'Fixed two marks that meant two things: the verdict on a finished jar now reads “Success” or “Didn’t work out” in its green or red box, without a ✓ or ✕ in front. So ✕ now only ever means “take this away”, and ✓ only “this is in order”.',
+    ],
+  },
   {
     version: '5.23',
     date: '2026-09-10 · 18:45 CEST',
