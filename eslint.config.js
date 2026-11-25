@@ -30,7 +30,7 @@ export default [
     files: ['service-worker.js'],
     languageOptions: {
       ecmaVersion: 2022, sourceType: 'script',
-      globals: { self: 'readonly', caches: 'readonly', location: 'readonly', fetch: 'readonly', URL: 'readonly', console: 'readonly' },
+      globals: { self: 'readonly', caches: 'readonly', location: 'readonly', fetch: 'readonly', URL: 'readonly', console: 'readonly', setTimeout: 'readonly' },
     },
   },
   {
