@@ -4,9 +4,18 @@
 // Dates/times are the release moment in the user's local zone (Europe/Stockholm —
 // CEST in summer, CET in winter).
 
-export const APP_VERSION = '5.25';
+export const APP_VERSION = '5.26';
 
 export const CHANGELOG = [
+  {
+    version: '5.26',
+    date: '2026-11-25 · 11:59 CET',
+    title: 'The update no longer freezes an old icon 🧊',
+    changes: [
+      'Fixed: 5.25 was meant to bring an old Home Screen icon (5.17) up to date by itself, but it could freeze that app instead: the new version waited for the page to reload, and the reload waited for the new version to finish starting. Now the new version finishes starting first and only then reloads the page.',
+      'Before: the old icon stayed on 5.17 and stopped answering taps. Now: it reloads once by itself and shows the newest version. Your jars were never touched by this.',
+    ],
+  },
   {
     version: '5.25',
     date: '2026-11-25 · 11:45 CET',

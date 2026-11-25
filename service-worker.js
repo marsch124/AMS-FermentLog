@@ -42,10 +42,17 @@ self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => Promise.all(keys.filter((k) => k.startsWith(PREFIX) && k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
-      .then(() => (OLD_PAGE
-        ? self.clients.matchAll({ type: 'window' }).then((cs) => Promise.all(cs.map((c) => c.navigate(c.url).catch(() => {}))))
-        : undefined))
   );
+  /* Reload an old page into the new app — but NOT inside waitUntil. 5.25 waited here for the reload to
+     finish, while the reload waited for this worker to finish starting: each waited for the other and the
+     app froze. Now the worker finishes starting first, and only then asks the page to reload. */
+  if (OLD_PAGE) {
+    setTimeout(() => {
+      self.clients.matchAll({ type: 'window' })
+        .then((cs) => cs.forEach((c) => { c.navigate(c.url).catch(() => {}); }))
+        .catch(() => {});
+    }, 300);
+  }
 });
 
 // Cache-first for our own assets; network fallback for everything else.
